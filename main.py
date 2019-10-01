@@ -1,6 +1,5 @@
 import asyncio
 import os
-import time
 from sys import version_info
 from urllib.parse import urlparse
 
@@ -16,11 +15,11 @@ class ChanDownloader:
         tasks = []
         board = urlparse(url).path.split('/')[1]
         thread_id = urlparse(url).path.split('/')[3]
-        desiredpath = os.getcwd() + '\\' + thread_id + '\\'
+        desiredpath = os.path.join(os.getcwd(), thread_id)
         if not os.path.exists(desiredpath):
             os.makedirs(desiredpath)
-        timeout = aiohttp.ClientTimeout(total=30)
-        headers = {'User-Agent': "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0"}
+        timeout = aiohttp.ClientTimeout(total=60)
+        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0'}
         async with aiohttp.ClientSession(timeout=timeout, headers=headers) as self.session:
             async with self.session.get(f'http://a.4cdn.org/{board}/thread/{thread_id}.json') as response:
                 json = await response.json()
@@ -29,7 +28,7 @@ class ChanDownloader:
                     pictureid = str(item['tim'])
                     extension = item['ext']
                     picture_url = f'https://i.4cdn.org/{board}/{pictureid}{extension}'
-                    picture_path = desiredpath + pictureid + extension
+                    picture_path = os.path.join(desiredpath, f'{pictureid}{extension}')
                     if not os.path.isfile(picture_path):
                         tasks.append(asyncio.create_task(self.download(picture_url, picture_path)))
             await asyncio.gather(*tasks)
@@ -46,10 +45,7 @@ class ChanDownloader:
 
 def main():
     urlinput = input('Enter thread URL: ')
-    x = time.time()
     ChanDownloader(urlinput)
-    print('Time to complete script: ', time.time() - x)
-    input('Press Enter to continue . . . ')
 
 
 if __name__ == '__main__':
