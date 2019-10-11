@@ -22,8 +22,8 @@ class ChanDownloader:
         headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0'}
         async with aiohttp.ClientSession(timeout=timeout, headers=headers) as self.session:
             async with self.session.get(f'http://a.4cdn.org/{board}/thread/{thread_id}.json') as response:
-                json = await response.json()
-            for item in json['posts']:
+                data = await response.json()
+            for item in data['posts']:
                 if 'tim' in item:
                     pictureid = str(item['tim'])
                     extension = item['ext']
