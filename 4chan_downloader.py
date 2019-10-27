@@ -6,23 +6,16 @@ from urllib.parse import urlparse
 import aiohttp
 
 
-class ChanDownloader:
-    def __init__(self, url):
-        self.session = None
-        asyncio.run(self.queue_downloads(url))
-
-    async def queue_downloads(self, url):
-        tasks = []
-        board = urlparse(url).path.split('/')[1]
-        thread_id = urlparse(url).path.split('/')[3]
-        desiredpath = Path.cwd() / thread_id
-        if not desiredpath.exists():
-            desiredpath.mkdir(parents=True)
-        timeout = aiohttp.ClientTimeout(total=60)
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:69.0) Gecko/20100101 Firefox/69.0'}
-        async with aiohttp.ClientSession(timeout=timeout, headers=headers) as self.session:
-            async with self.session.get(f'http://a.4cdn.org/{board}/thread/{thread_id}.json') as response:
-                data = await response.json()
+async def queue_downloads(url):
+    tasks = []
+    board = urlparse(url).path.split('/')[1]
+    thread_id = urlparse(url).path.split('/')[3]
+    desiredpath = Path.cwd() / thread_id
+    desiredpath.mkdir(parents=False, exist_ok=True)
+    headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
+    async with aiohttp.ClientSession(headers=headers) as session:
+        async with session.get(f'http://a.4cdn.org/{board}/thread/{thread_id}.json') as response:
+            data = await response.json()
             for item in data['posts']:
                 if 'tim' in item:
                     pictureid = str(item['tim'])
@@ -30,22 +23,22 @@ class ChanDownloader:
                     picture_url = f'https://i.4cdn.org/{board}/{pictureid}{extension}'
                     picture_path = desiredpath / f'{pictureid}{extension}'
                     if not picture_path.is_file():
-                        tasks.append(asyncio.create_task(self.download(picture_url, picture_path)))
+                        tasks.append(asyncio.create_task(download(session, picture_url, picture_path)))
             await asyncio.gather(*tasks)
 
-    async def download(self, picture_url, picture_path):
-        async with self.session.get(picture_url) as r:
-            if r.status == 200:
-                with open(picture_path, 'wb') as f:
-                    print(f'Downloading {picture_url}')
-                    f.write(await r.read())
-            else:
-                print(f'Error {r.status} while getting request for {picture_url}')
+
+async def download(session, picture_url, picture_path):
+    async with session.get(picture_url) as r:
+        if r.status == 200:
+            picture_path.write_bytes(await r.read())
+            print(f'Downloaded {picture_url}')
+        else:
+            print(f'Error {r.status} while getting request for {picture_url}')
 
 
 def main():
     urlinput = input('Enter thread URL: ')
-    ChanDownloader(urlinput)
+    asyncio.run(queue_downloads(urlinput))
 
 
 if __name__ == '__main__':
