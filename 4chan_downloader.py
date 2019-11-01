@@ -1,5 +1,5 @@
 import asyncio
-from pathlib import Path
+import pathlib
 from sys import version_info
 from urllib.parse import urlparse
 
@@ -10,8 +10,8 @@ async def queue_downloads(url):
     tasks = []
     board = urlparse(url).path.split('/')[1]
     thread_id = urlparse(url).path.split('/')[3]
-    desiredpath = Path.cwd() / thread_id
-    desiredpath.mkdir(parents=False, exist_ok=True)
+    desired_path = pathlib.Path.cwd() / thread_id
+    desired_path.mkdir(parents=False, exist_ok=True)
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:70.0) Gecko/20100101 Firefox/70.0'}
     async with aiohttp.ClientSession(headers=headers) as session:
         async with session.get(f'http://a.4cdn.org/{board}/thread/{thread_id}.json') as response:
@@ -21,8 +21,8 @@ async def queue_downloads(url):
                     pictureid = str(item['tim'])
                     extension = item['ext']
                     picture_url = f'https://i.4cdn.org/{board}/{pictureid}{extension}'
-                    picture_path = desiredpath / f'{pictureid}{extension}'
-                    if not picture_path.is_file():
+                    picture_path = desired_path / f'{pictureid}{extension}'
+                    if picture_path.is_file() is False:
                         tasks.append(asyncio.create_task(download(session, picture_url, picture_path)))
             await asyncio.gather(*tasks)
 
